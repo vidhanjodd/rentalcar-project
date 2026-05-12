@@ -7,6 +7,27 @@
 
 ---
 
+## Project Memory Files
+
+Read these before starting any task. They are the living state of the project.
+
+| File | When to read |
+|------|-------------|
+| `AGENTS.md` (this file) | Always — full project context and rules |
+| `.ai/tasks.md` | Before starting work — shows what's done `[x]` and what's missing `[ ]`. Update when you complete a task. |
+| `.ai/decisions.md` | Before making any architectural choice — 12 ADRs explain WHY things are built the way they are. If your change conflicts with an ADR, add a new one. |
+| `.ai/handoffs/initial-scan-2026-05-12.md` | If you're new — full project state, dangerous areas, suggested priorities |
+| `backend/CLAUDE.md` | Before touching backend — routes, schema, caching patterns, feature checklist |
+| `frontend/CLAUDE.md` | Before touching frontend — API integration, routing plan, booking UI flows |
+
+**Workflow for any task:**
+1. Check `.ai/tasks.md` — is this already tracked?
+2. Check `.ai/decisions.md` — does an ADR cover this area?
+3. Do the work
+4. Update `.ai/tasks.md` — mark done or add new item
+
+---
+
 ## How to Read This Project as an AI Agent
 
 1. **Start with the backend.** All business logic, domain rules, and data model live in `backend/src/main/java/com/rentalcar/`. The frontend is a bare scaffold with no domain code yet.
