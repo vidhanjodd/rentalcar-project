@@ -2,7 +2,24 @@
 
 ---
 
-## 2026-05-12
+## 2026-05-12 (session 2)
+
+**Agent/Model:** claude-sonnet-4-6  
+**Changes made:**
+- Built full React frontend (25 files)
+- Installed react-router-dom v6, axios, tailwindcss v3
+- AuthContext + axios interceptors with auto JWT refresh
+- Pages: Login, Register, Search (hero + paginated cards), CarDetail + booking form, MyBookings, Admin dashboard
+- Components: Navbar, ProtectedRoute, AdminRoute, CarCard, BookingCard, StatusBadge, Pagination
+- Admin dashboard: Fleet management (add/edit car form), Bookings table (filter/complete/force-cancel), Audit trail viewer
+- Avis-inspired design: #C01A2A primary, dark navbar, white cards, mobile-first
+
+**Blockers:** None  
+**Next steps:** Docker Compose for local dev, write tests, Kafka notification consumers
+
+---
+
+## 2026-05-12 (session 1)
 
 **Agent/Model:** claude-sonnet-4-6  
 **Changes made:**
@@ -51,17 +68,21 @@
 
 ### Frontend
 - [x] Vite + React 19 project scaffolded
-- [ ] Routing (react-router-dom not yet installed)
-- [ ] Login/register pages
-- [ ] Car search page
-- [ ] Car detail page
-- [ ] Booking creation flow
-- [ ] My bookings page
-- [ ] Admin dashboard
-- [ ] Admin fleet management
-- [ ] Admin booking management
-- [ ] API integration (axios/fetch client)
-- [ ] Auth state management (JWT storage + refresh)
+- [x] Routing (react-router-dom v6)
+- [x] Login/register pages
+- [x] Car search page (hero + city/date filters + paginated car cards)
+- [x] Car detail page (specs + sticky booking form + price preview)
+- [x] Booking creation flow (POST /api/bookings, redirect on success)
+- [x] My bookings page (confirm/cancel actions, status badges)
+- [x] Admin dashboard (3-tab: Fleet / Bookings / Audit)
+- [x] Admin fleet management (add car form, status change, delete)
+- [x] Admin booking management (filter by status/email/date, complete, force-cancel)
+- [x] Admin audit trail viewer (search by entityType + UUID)
+- [x] API integration (axios instance with base URL)
+- [x] Auth state management (AuthContext, JWT in memory, refresh token in localStorage)
+- [x] Auto token refresh on 401 (axios response interceptor)
+- [x] ProtectedRoute + AdminRoute guards
+- [x] Tailwind CSS v3 with Avis-inspired design (#C01A2A primary)
 
 ---
 
