@@ -85,6 +85,11 @@ public class CarService {
         return carRepository.findAllCities();
     }
 
+    public PageResponse<CarResponse> listAll(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return PageResponse.from(carRepository.findAll(pageable).map(this::toResponse));
+    }
+
     // ── Mutations — all evict cache, carry performedBy for audit ─────────────
 
     @Transactional

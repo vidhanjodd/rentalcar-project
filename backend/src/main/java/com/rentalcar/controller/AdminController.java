@@ -54,6 +54,14 @@ public class AdminController {
 
     // ── Fleet management ──────────────────────────────────────────────────────
 
+    @GetMapping("/cars")
+    @Operation(summary = "List all fleet cars — admin view (all statuses, all cities)")
+    public ResponseEntity<PageResponse<CarResponse>> listAllCars(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(carService.listAll(page, size));
+    }
+
     @PostMapping("/cars")
     @Operation(summary = "Add a new car to the fleet")
     public ResponseEntity<CarResponse> createCar(

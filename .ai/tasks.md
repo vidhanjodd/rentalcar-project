@@ -2,6 +2,22 @@
 
 ---
 
+## 2026-05-12 (session 4)
+
+**Agent/Model:** claude-sonnet-4-6  
+**Changes made:**
+- Fixed admin role not showing in navbar/routes after login — `AuthContext.login()` was reading `data.user` (undefined) instead of mapping flat `AuthResponse` fields (`userId`, `username`, `email`, `role`) into user object
+- Fixed logout on page refresh — added `useEffect` in `AuthProvider` that reads `refreshToken` from localStorage on mount, calls `POST /api/auth/refresh`, and restores `accessToken` + `user` state; app renders `null` during init to prevent flash of logged-out state
+- Fixed admin Fleet tab showing no cars — backend had no list-all-cars endpoint; added `GET /api/admin/cars` to `AdminController` and `CarService.listAll(page, size)` using `carRepository.findAll(Pageable)` (soft-deleted cars excluded via `@SQLRestriction`)
+- Added `adminListCars` to `frontend/src/api/cars.js`
+- Rewrote `FleetTab` in `AdminPage.jsx` — now loads full car table on mount with brand/model/year/plate/city/category/dailyRate columns, inline status dropdown (triggers `PATCH /api/admin/cars/{id}/status`), Edit (opens pre-filled form) and Delete (confirm dialog) buttons per row, pagination
+- Backend build verified clean after changes
+
+**Blockers:** None  
+**Next steps:** Docker Compose for local dev (PostgreSQL + Redis + Kafka)
+
+---
+
 ## 2026-05-12 (session 3)
 
 **Agent/Model:** Codex (GPT-5)  

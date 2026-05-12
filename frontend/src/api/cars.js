@@ -4,6 +4,8 @@ export const searchCars = (params) => api.get('/api/cars/search', { params })
 export const getCarById = (id) => api.get(`/api/cars/${id}`)
 export const getCities = () => api.get('/api/cars/cities')
 
+export const adminListCars = (page = 0, size = 20) =>
+  api.get('/api/admin/cars', { params: { page, size } })
 export const adminCreateCar = (data) => api.post('/api/admin/cars', data)
 export const adminUpdateCar = (id, data) => api.put(`/api/admin/cars/${id}`, data)
 export const adminUpdateCarStatus = (id, status) =>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { adminGetBookings, adminCompleteBooking, adminForceCancel, adminGetAudit } from '../api/bookings'
-import { adminCreateCar, adminUpdateCar, adminUpdateCarStatus, adminDeleteCar } from '../api/cars'
+import { adminListCars, adminCreateCar, adminUpdateCar, adminUpdateCarStatus, adminDeleteCar } from '../api/cars'
 import StatusBadge from '../components/StatusBadge'
 import Pagination from '../components/Pagination'
 
@@ -39,12 +39,30 @@ export default function AdminPage() {
 }
 
 function FleetTab() {
+  const [cars, setCars] = useState(null)
+  const [page, setPage] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [editCar, setEditCar] = useState(null)
   const [form, setForm] = useState(emptyCarForm)
   const [loading, setLoading] = useState(false)
+  const [listLoading, setListLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const loadCars = useCallback(async (p = 0) => {
+    setListLoading(true)
+    try {
+      const { data } = await adminListCars(p, 20)
+      setCars(data)
+      setPage(p)
+    } catch {
+      setError('Failed to load fleet')
+    } finally {
+      setListLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadCars() }, [loadCars])
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
@@ -58,12 +76,13 @@ function FleetTab() {
     try {
       if (editCar) {
         await adminUpdateCar(editCar.id, form)
-        setSuccess('Car updated successfully')
+        setSuccess('Car updated')
       } else {
         await adminCreateCar(form)
         setSuccess('Car added to fleet')
       }
       setShowForm(false)
+      loadCars(page)
     } catch (e) {
       setError(e.response?.data?.message || 'Operation failed')
     } finally {
@@ -74,7 +93,8 @@ function FleetTab() {
   const handleStatusChange = async (car, status) => {
     try {
       await adminUpdateCarStatus(car.id, status)
-      setSuccess(`Status updated to ${status}`)
+      setSuccess(`${car.brand} ${car.model} → ${status}`)
+      loadCars(page)
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to update status')
     }
@@ -85,9 +105,17 @@ function FleetTab() {
     try {
       await adminDeleteCar(car.id)
       setSuccess('Car removed from fleet')
+      loadCars(page)
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to delete car')
     }
+  }
+
+  const STATUS_COLORS = {
+    AVAILABLE: 'bg-green-100 text-green-700',
+    BOOKED: 'bg-blue-100 text-blue-700',
+    MAINTENANCE: 'bg-yellow-100 text-yellow-700',
+    RETIRED: 'bg-gray-100 text-gray-500',
   }
 
   return (
@@ -156,7 +184,62 @@ function FleetTab() {
         </div>
       )}
 
-      <p className="text-xs text-gray-400 mt-2">Use Search page to view fleet. Use Add Car above to add vehicles. Edit/status controls appear after implementing a fleet list endpoint.</p>
+      {listLoading ? (
+        <div className="text-center py-10 text-gray-400">Loading fleet...</div>
+      ) : (
+        <>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                <tr>
+                  {['Car', 'Plate', 'City', 'Category', 'Daily Rate', 'Status', 'Actions'].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {cars?.content?.map((car) => (
+                  <tr key={car.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-900">{car.brand} {car.model}</p>
+                      <p className="text-gray-400 text-xs">{car.year} · {car.color}</p>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">{car.licensePlate}</td>
+                    <td className="px-4 py-3 text-gray-600">{car.city}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{car.category}</td>
+                    <td className="px-4 py-3 font-semibold">₹{Number(car.dailyRate).toLocaleString()}</td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={car.status}
+                        onChange={(e) => handleStatusChange(car, e.target.value)}
+                        className={`text-xs font-medium px-2 py-1 rounded border-0 outline-none cursor-pointer ${STATUS_COLORS[car.status] || 'bg-gray-100 text-gray-600'}`}
+                      >
+                        {CAR_STATUSES.map((s) => <option key={s}>{s}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1.5">
+                        <button onClick={() => openEdit(car)}
+                          className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded text-xs font-medium hover:bg-gray-200 transition-colors">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(car)}
+                          className="bg-red-50 text-red-600 px-2.5 py-1 rounded text-xs font-medium hover:bg-red-100 transition-colors">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!cars?.content?.length && (
+              <div className="text-center py-10 text-gray-400">No cars in fleet</div>
+            )}
+          </div>
+          {cars && <Pagination page={page} totalPages={cars.totalPages} onChange={loadCars} />}
+        </>
+      )}
     </div>
   )
 }
