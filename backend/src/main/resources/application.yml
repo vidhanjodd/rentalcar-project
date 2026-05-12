@@ -1,0 +1,132 @@
+spring:
+  application:
+    name: rental-car-booking
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/rentalcardb}
+    username: ${DB_USER:vidhan}
+    password: ${DB_PASSWORD:vidhan}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20        # yours — handles production load
+      minimum-idle: 5              # yours — keeps connections warm
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: RentalCarHikariPool   # deepak — visible in metrics
+
+  jpa:
+    hibernate:
+      ddl-auto: validate           # flyway owns schema, hibernate only validates
+    show-sql: false
+    open-in-view: false            # deepak — disables OSIV anti-pattern
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+        jdbc:
+          time_zone: UTC           # deepak — correct for TIMESTAMPTZ columns
+          lob:
+            non_contextual_creation: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 5
+          min-idle: 2
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000         # 10 min default; overridden per-cache in RedisConfig
+
+  kafka:
+    admin:
+      fail-fast: true              # deepak — fail startup if Kafka unreachable
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true                    # deepak — broker-level deduplication
+        max.in.flight.requests.per.connection: 5    # deepak — safe with idempotence ON
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:rental-car-group}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: "com.rentalcar.kafka"
+    listener:
+      ack-mode: manual_immediate
+
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false   # deepak — tolerant deserialization
+    default-property-inclusion: non_null  # deepak — clean API responses, no null fields
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}         # 24h
+    refresh-expiration-ms: ${JWT_REFRESH_MS:604800000}   # 7d — yours (refresh tokens)
+
+  kafka:
+    topics:
+      booking-created: booking.created        # deepak topic strategy
+      booking-confirmed: booking.confirmed
+      booking-cancelled: booking.cancelled
+      booking-completed: booking.completed
+      audit-events: audit.events
+
+  scheduling:
+    pending-timeout-minutes: ${PENDING_TIMEOUT_MINUTES:30}   # deepak scheduler
+    interval-ms: ${SCHEDULER_INTERVAL_MS:3600000}
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never        # deepak — never expose stack traces to clients
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized   # deepak — more secure than always
+  metrics:
+    tags:
+      application: ${spring.application.name}   # deepak — tag all metrics with app name
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    com.rentalcar: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.flywaydb: INFO
