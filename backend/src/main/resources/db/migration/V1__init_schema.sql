@@ -144,7 +144,7 @@ VALUES (
     gen_random_uuid(),
     'admin',
     'admin@rentalcar.com',
-    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/QmcnorRhe',
+    '$2b$12$M0gguZfeRc3G2wk3te9X3.BDyfLSqZ/NVqqGN1ZtgKbSGkG8kOoQq',
     'System', 'Admin', 'ROLE_ADMIN', TRUE
 );
 

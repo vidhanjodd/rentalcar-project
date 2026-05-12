@@ -2,6 +2,27 @@
 
 ---
 
+## 2026-05-12 (session 3)
+
+**Agent/Model:** Codex (GPT-5)  
+**Changes made:**
+- Investigated failing admin login across auth flow, security config, seed data, and live database state
+- Verified `AuthService.login()` and Spring Security username/email lookup were correct
+- Confirmed the seeded admin BCrypt hash did not match `Admin@123`
+- Fixed the admin seed hash in `backend/src/main/resources/db/migration/V1__init_schema.sql`
+- Added `backend/src/main/resources/db/migration/V3__fix_seed_admin_password.sql` to repair existing databases
+- Repaired the Flyway checksum mismatch with `mvn -Dflyway.url=jdbc:postgresql://localhost:5432/rentalcardb -Dflyway.user=vidhan -Dflyway.password=vidhan -Dflyway.locations=filesystem:src/main/resources/db/migration flyway:repair`
+- Applied the pending admin-password repair migration with `flyway:migrate`
+- Verified the repaired schema history and updated admin password hash directly in PostgreSQL
+- Verified `POST /api/auth/login` succeeds for `admin` / `Admin@123` with HTTP 200 and a valid JWT auth response
+- Marked the tracked admin login debug task as completed
+- Verified the backend still builds with `mvn -q -DskipTests package`
+
+**Blockers:** None  
+**Next steps:** Consider adding Flyway Maven plugin configuration so `flyway:repair` and `flyway:migrate` do not require explicit JDBC parameters in local development
+
+---
+
 ## 2026-05-12 (session 2)
 
 **Agent/Model:** claude-sonnet-4-6  
@@ -102,3 +123,4 @@
 - [ ] Rate limiting on auth endpoints
 - [ ] Car search by additional filters (category, price range, transmission, fuel type)
 - [ ] Booking history with cancellation reason visible to user
+- [x] Debug admin login (seeded admin password hash corrected; existing DBs repaired via Flyway V3)
