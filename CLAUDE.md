@@ -5,6 +5,23 @@
 
 ---
 
+## Agent Workflow (MANDATORY)
+
+Before starting ANY task:
+1. Read `.ai/tasks.md` — check if already tracked; find related incomplete items
+2. Read `.ai/decisions.md` — check if an ADR covers the area you're about to touch
+3. Do the work
+4. Update `.ai/tasks.md` — mark completed tasks `[x]`, add new tasks if discovered
+
+Also read before touching specific areas:
+- `backend/CLAUDE.md` — before any backend change (routes, schema, caching patterns)
+- `frontend/CLAUDE.md` — before any frontend change (API integration, routing plan)
+- `.ai/handoffs/initial-scan-2026-05-12.md` — if starting fresh on an unfamiliar area
+
+**Never skip step 4.** `.ai/tasks.md` is the living state of what's done and what's not.
+
+---
+
 ## Tech Stack
 
 ### Backend
