@@ -86,6 +86,9 @@ app:
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}         # 24h
     refresh-expiration-ms: ${JWT_REFRESH_MS:604800000}   # 7d — yours (refresh tokens)
 
+  cookie:
+    secure: ${COOKIE_SECURE:false}   # set true in prod (requires HTTPS)
+
   kafka:
     topics:
       booking-created: booking.created        # deepak topic strategy

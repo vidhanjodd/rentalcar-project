@@ -11,8 +11,8 @@ import AdminPage from './pages/AdminPage'
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <div className="min-h-screen flex flex-col bg-gray-50">
           <Navbar />
           <main className="flex-1">
@@ -30,7 +30,7 @@ export default function App() {
             </Routes>
           </main>
         </div>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }

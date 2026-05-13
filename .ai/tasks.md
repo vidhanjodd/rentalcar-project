@@ -2,6 +2,41 @@
 
 ---
 
+## 2026-05-13 (session 5 — part 2)
+
+**Agent/Model:** claude-sonnet-4-6  
+**Changes made:**
+- **SECURITY — refresh token moved to httpOnly cookie** (backend + frontend):
+  - **`AuthController.java`**: `login` and `register` now call `setRefreshCookie()` to write `refresh_token` as `httpOnly; SameSite=Strict; path=/api/auth` cookie, then null out the `refreshToken` field before returning the JSON response. `refresh` endpoint reads token from cookie (`extractRefreshCookie()`) instead of request body — returns 401 if cookie absent. `logout` and `change-password` call `clearRefreshCookie()` (maxAge=0) to expire the cookie server-side.
+  - **`application.yml`**: Added `app.cookie.secure: ${COOKIE_SECURE:false}` — set env var `COOKIE_SECURE=true` in prod (requires HTTPS). Dev stays HTTP.
+  - **`api/axios.js`**: Added `withCredentials: true` to the axios instance so cookies are sent on cross-origin requests (localhost:5173 → localhost:8080). Inner refresh call also uses `withCredentials: true`. Removed all `localStorage.getItem/setItem/removeItem('refreshToken')` calls from the interceptor.
+  - **`api/auth.js`**: `refresh()` sends empty body — token comes from cookie, not request body. `withCredentials: true` explicit on the raw axios call.
+  - **`context/AuthContext.jsx`**: Startup refresh no longer checks `localStorage` first — just always hits `/api/auth/refresh` and lets the cookie speak. Removed all `localStorage.*('refreshToken')` calls from login, logout, and the catch block.
+- **Why**: Refresh tokens in `localStorage` are readable by any XSS-injected script. An httpOnly cookie cannot be read by JavaScript at all — only the browser sends it automatically on matching requests. `SameSite=Strict` + `path=/api/auth` further scopes it so it's only sent to auth endpoints, not to every API call.
+
+**Blockers:** None  
+**Next steps:** Docker Compose for local dev (PostgreSQL + Redis + Kafka)
+
+---
+
+## 2026-05-13 (session 5)
+
+**Agent/Model:** claude-sonnet-4-6  
+**Changes made:**
+- **BUG FIX — double refresh on bad token** (`api/auth.js`): `refresh()` was using the `api` axios instance, so a 401 from the refresh endpoint would trigger the response interceptor, which would attempt a second refresh with the same bad token before redirecting. Fixed by using raw `axios.post` for `refresh()` — consistent with how the interceptor itself calls the refresh endpoint internally.
+- **BUG FIX — hard page reload on session expiry** (`App.jsx`, `api/axios.js`, `context/AuthContext.jsx`): Flipped `<BrowserRouter>` to wrap `<AuthProvider>` instead of the reverse. AuthProvider now calls `useNavigate()` (valid since it's inside the Router) and wires it into the axios interceptor via exported `setNavigate()`. Interceptor now does soft React Router navigation (`navigate('/login', { replace: true })`) instead of `window.location.href = '/login'` — preserves React state, no full page reload on token expiry.
+- **SECURITY / MINOR — removed `window.__accessToken` global** (`api/axios.js`, `context/AuthContext.jsx`): Access token was stored on the global `window` object, readable by any XSS-injected script via the console. Replaced with a module-level closure variable `_accessToken` in `axios.js`. Exported `setAccessToken()` and `clearAccessToken()` functions for AuthContext to call. Token is now scoped to the axios module — not reachable from outside the module.
+- **MINOR — removed `accessToken` from React state and context value**: Only `tokenPresent` boolean remains in React state (drives `isAuthenticated`). Actual token lives only in the axios module closure. Eliminates a second source of truth that could drift out of sync.
+
+**Why these matter:**
+- Double refresh was causing two API calls to `/api/auth/refresh` on startup with a stale/invalid token, and the hard redirect bypassed React Router losing URL state.
+- `window.__accessToken` was security hygiene — access tokens should not be readable from the browser console.
+
+**Blockers:** None  
+**Next steps:** httpOnly cookie for refresh token (needs backend `AuthController` + `AuthService` changes — prod blocker for XSS safety)
+
+---
+
 ## 2026-05-12 (session 4)
 
 **Agent/Model:** claude-sonnet-4-6  
@@ -116,8 +151,8 @@
 - [x] Admin booking management (filter by status/email/date, complete, force-cancel)
 - [x] Admin audit trail viewer (search by entityType + UUID)
 - [x] API integration (axios instance with base URL)
-- [x] Auth state management (AuthContext, JWT in memory, refresh token in localStorage)
-- [x] Auto token refresh on 401 (axios response interceptor)
+- [x] Auth state management (AuthContext, JWT in module closure, refresh token in httpOnly cookie)
+- [x] Auto token refresh on 401 (axios response interceptor, soft React Router redirect on expiry)
 - [x] ProtectedRoute + AdminRoute guards
 - [x] Tailwind CSS v3 with Avis-inspired design (#C01A2A primary)
 
