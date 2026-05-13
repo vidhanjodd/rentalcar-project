@@ -33,7 +33,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="text-primary text-3xl font-black">DRIVEZY</Link>
+          <Link to="/" className="text-primary text-3xl font-black">AVIS</Link>
           <p className="text-gray-500 mt-2 text-sm">Create your account</p>
         </div>
 
