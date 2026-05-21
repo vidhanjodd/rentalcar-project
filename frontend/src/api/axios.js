@@ -15,7 +15,7 @@ const redirectToLogin = () => {
 }
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: '',
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,   // sends the httpOnly refresh_token cookie on every request
 })
@@ -53,7 +53,7 @@ api.interceptors.response.use(
       try {
         // Cookie is sent automatically — no body needed, no localStorage read
         const { data } = await axios.post(
-          'http://localhost:8080/api/auth/refresh',
+          '/api/auth/refresh',
           {},
           { withCredentials: true }
         )

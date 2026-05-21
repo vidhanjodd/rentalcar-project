@@ -6,7 +6,7 @@ import api from './axios'
 // causing a second wasted refresh attempt before redirecting to login.
 // No body — refresh token is in the httpOnly cookie, sent automatically.
 export const refresh = () =>
-  axios.post('http://localhost:8080/api/auth/refresh', {}, { withCredentials: true })
+  axios.post('/api/auth/refresh', {}, { withCredentials: true })
 
 export const login = (data) => api.post('/api/auth/login', data)
 export const register = (data) => api.post('/api/auth/register', data)
