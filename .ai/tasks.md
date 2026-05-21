@@ -2,6 +2,23 @@
 
 ---
 
+## 2026-05-21 (session 6)
+
+**Agent/Model:** Antigravity (Gemini 3.5 Flash)  
+**Changes made:**
+- **DOCKERIZATION & DEPLOYMENT**:
+  - **`backend/Dockerfile`**: Multi-stage build (Maven compiler stage with Java 21 + minimal runtime stage using eclipse-temurin:21-jre-alpine).
+  - **`frontend/Dockerfile`**: Multi-stage build (Node 20 builder + Nginx:alpine runtime).
+  - **`frontend/nginx.conf`**: Configured Nginx to serve React static files and act as a reverse proxy for `/api/*`, `/swagger-ui*`, `/api-docs*`, and `/actuator/*` pointing to backend container.
+  - **`docker-compose.yml`**: Created orchestration for postgres:16-alpine, redis:7-alpine, zookeeper, kafka (confluentinc/cp-kafka:7.5.0), Spring Boot backend, and Nginx frontend.
+  - **`frontend/src/api/axios.js` and `frontend/src/api/auth.js`**: Refactored hardcoded API baseURL to read dynamic `import.meta.env.VITE_API_BASE_URL` with fallback to `http://localhost:8080` for developer convenience.
+- **Why**: Allows deployment of isolated containers to AWS EC2, runs entire stack on single port (80) under a unified origin, and solves browser-side CORS and httpOnly Cookie sharing constraints.
+
+**Blockers:** None  
+**Next steps:** Prepare EC2 host with Docker/Docker Compose and run it.
+
+---
+
 ## 2026-05-13 (session 5 — part 2)
 
 **Agent/Model:** claude-sonnet-4-6  
@@ -168,7 +185,7 @@
 - [ ] Reviews and ratings system
 - [ ] Unit tests (JUnit 5 + Mockito)
 - [ ] Integration tests (Testcontainers — PostgreSQL + Kafka)
-- [ ] Docker Compose for local dev (PostgreSQL + Redis + Kafka)
+- [x] Docker Compose for local dev (PostgreSQL + Redis + Kafka)
 - [ ] Production CORS configuration
 - [ ] Secure JWT secret management (must override `JWT_SECRET` env var)
 - [ ] Rate limiting on auth endpoints

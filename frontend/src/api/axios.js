@@ -14,8 +14,10 @@ const redirectToLogin = () => {
   else window.location.href = '/login'
 }
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL !== undefined ? import.meta.env.VITE_API_BASE_URL : 'http://localhost:8080';
+
 const api = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,   // sends the httpOnly refresh_token cookie on every request
 })
@@ -53,7 +55,7 @@ api.interceptors.response.use(
       try {
         // Cookie is sent automatically — no body needed, no localStorage read
         const { data } = await axios.post(
-          'http://localhost:8080/api/auth/refresh',
+          `${apiBaseUrl}/api/auth/refresh`,
           {},
           { withCredentials: true }
         )
