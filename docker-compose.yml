@@ -1,0 +1,129 @@
+services:
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: rentalcar-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rentalcardb
+      POSTGRES_USER: ${DB_USER:-vidhan}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-vidhan}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-vidhan} -d rentalcardb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rentalcar-net
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: rentalcar-redis
+    restart: unless-stopped
+    command: >
+      sh -c "if [ -n '${REDIS_PASSWORD}' ]; then
+               redis-server --requirepass $${REDIS_PASSWORD};
+             else
+               redis-server;
+             fi"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rentalcar-net
+
+  # ── Kafka (KRaft mode — no Zookeeper) ────────────────────────────────────────
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: rentalcar-kafka
+    restart: unless-stopped
+    environment:
+      # KRaft settings
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      # Listeners
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # Topics auto-create
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - kafka_data:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - rentalcar-net
+
+  # ── Backend ──────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rentalcar-backend
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/rentalcardb
+      DB_USER: ${DB_USER:-vidhan}
+      DB_PASSWORD: ${DB_PASSWORD:-vidhan}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      KAFKA_SERVERS: kafka:9092
+      KAFKA_CONSUMER_GROUP: ${KAFKA_CONSUMER_GROUP:-rental-car-group}
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      JWT_REFRESH_MS: ${JWT_REFRESH_MS:-604800000}
+      SERVER_PORT: 8080
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      PENDING_TIMEOUT_MINUTES: ${PENDING_TIMEOUT_MINUTES:-30}
+      SCHEDULER_INTERVAL_MS: ${SCHEDULER_INTERVAL_MS:-3600000}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - rentalcar-net
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rentalcar-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - rentalcar-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+
+networks:
+  rentalcar-net:
+    driver: bridge
