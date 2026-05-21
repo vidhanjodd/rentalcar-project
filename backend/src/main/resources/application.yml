@@ -102,7 +102,7 @@ app:
     interval-ms: ${SCHEDULER_INTERVAL_MS:3600000}
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8081}
   error:
     include-message: always
     include-binding-errors: always
